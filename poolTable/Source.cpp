@@ -92,10 +92,16 @@ Mat hsvSliders(Mat img, Mat hsv, Mat hsvThresh) {
 	return hsvThresh;
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	Mat img, gray, hsv, hsvThresh;
-	img = imread("../data/shrunkCroppedPool1.png");
+	if (argc != 2) {
+		cout << "Did not read image" << endl;
+		return -1;
+	}
+
+	img = imread(argv[1], IMREAD_COLOR); // Read the file
+
 	cvtColor(img, gray, COLOR_BGR2GRAY);
 	// smooth it, otherwise a lot of false circles may be detected
 	int sizeB = 9;
