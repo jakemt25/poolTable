@@ -1,7 +1,13 @@
 /**
-* @file openCVTest.cpp
-* @brief Track Pool Balls on a Table
+* @file Source.cpp
+* @brief Track Pool Balls on a Table and find Trajectories
 * @author Jake Thomas
+* Todo:
+* * Implement a simple GUI for with options to play and recalibration
+* * Make it so that recalibration works with mouse clicks
+* * Take pictures with pool stick to work on trajectories and finding the stick
+* * Implement with video input
+* * Output to a projector with just the circles and trajectory lines
 */
 
 #include "opencv2/imgproc/imgproc.hpp"
@@ -36,7 +42,10 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 	}*/
 }
 
-Mat hsvSliders(Mat img, Mat hsv, Mat hsvThresh) {
+Mat hsvSliders(Mat img) {
+	Mat hsvThresh, hsv;
+	//turn it into a hsv image
+	cvtColor(img, hsv, COLOR_BGR2HSV);
 	namedWindow("Control", CV_WINDOW_AUTOSIZE); 
 	//create a window called "Control"
 	/*values that seem good for cropped 1: 114-126, 100-255, 75-255
@@ -109,33 +118,14 @@ int main(int argc, char** argv)
 		cout << "Did not read image" << endl;
 		return -1;
 	}
-
-	img = imread(argv[1], IMREAD_COLOR); // Read the file
-
-	cvtColor(img, gray, COLOR_BGR2GRAY);
-	// smooth it, otherwise a lot of false circles may be detected
-	int sizeB = 9;
-	cvtColor(img, hsv, COLOR_BGR2HSV);
-	/*
-	//namedWindow("HSV", 1);
-	//imshow("HSV", hsv);
-	//threshold hsv/// Separate the image in 3 places ( H, S, V )
-	//vector<Mat> hsv_planes;
-	//split(img, hsv_planes);
-	//threshold(hsv_planes[0], hsvThresh, 145, 230, THRESH_BINARY);
-	//namedWindow("Threshold", 1);
-	//imshow("Threshold", hsvThresh);
-	//findHist(hsv);
-	
-	GaussianBlur(gray, gray, Size(sizeB, sizeB), 2, 2);
-	namedWindow("Gray", 1);
-	imshow("Gray", gray);
-	namedWindow("src", 1);
-	imshow("src", img);
-	*/
-
-	hsvThresh = hsvSliders(img, hsv, hsvThresh);
+	//read the image
+	img = imread(argv[1], IMREAD_COLOR); 
+	//set the thresholds to find the balls
+	hsvThresh = hsvSliders(img);
+	//use blur to smooth the picture
 	GaussianBlur(hsvThresh, hsvThresh, Size(9, 9), 2, 2);
+	//set up the playing area (make it so pockets don't get seen as balls)
+	//TODO: Make this based on mouse clicks at each pocket
 	/* for shrunk cropped 1  | cropped 2
 	// Table Range = x, y
 	// Top Left = 95, 32		115, 32
@@ -161,30 +151,31 @@ int main(int argc, char** argv)
 	int blX = 37; int blY = 438;
 	int brX = 448; int brY = 416;
 	//*/
-	vector<Point2f> vert(6);
-	vert[0] = Point(tlX, tlY);
-	vert[1] = Point(trX, trY);
-	vert[2] = Point(mrX, mrY);
-	vert[3] = Point(brX, brY);
-	vert[4] = Point(blX, blY);
-	vert[5] = Point(mlX, mlY);
+	vector<Point2f> playingArea(6);
+	playingArea[0] = Point(tlX, tlY);
+	playingArea[1] = Point(trX, trY);
+	playingArea[2] = Point(mrX, mrY);
+	playingArea[3] = Point(brX, brY);
+	playingArea[4] = Point(blX, blY);
+	playingArea[5] = Point(mlX, mlY);
+	//to determine if it's on the playing area, have to find the contours
+	//to do this we must draw it on its own area and overlay it on the picture
 	Mat contourMapping = Mat::zeros(img.size(), CV_8UC1);
-	/// Draw it in src
 	for (int j = 0; j < 6; j++)
 	{
-		line(contourMapping, vert[j], vert[(j + 1) % 6], Scalar(255), 3, 8);
+		line(contourMapping, playingArea[j], playingArea[(j + 1) % 6], Scalar(255), 3, 8);
 	}
 	/// Get the contours
 	vector<vector<Point> > contours; vector<Vec4i> hierarchy;
 	findContours(contourMapping, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
 
+	//finally use hough circles function to find the balls that have a center on the playing area
 	vector<Vec3f> circles;
-	//			     image, circles,         method,dp, minDist, param1, param2, min radius, max radius
 	HoughCircles(hsvThresh, circles, HOUGH_GRADIENT, 1, 20, 20, 10, 7, 15);
 	for (size_t i = 0; i < circles.size(); i++)
 	{
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-		//if(true){
+		//if(true){ //used to find which circles are cut off
 		if (pointPolygonTest(contours[0], Point2f(center), false) == 1) {
 			int radius = cvRound(circles[i][2]);
 			// draw the circle center
@@ -193,17 +184,15 @@ int main(int argc, char** argv)
 			circle(img, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 		}
 	}
-	//namedWindow("hsvThresh", 1);
-	//imshow("hsvThresh", hsvThresh);
-
-	// Draw table outline
+	// Draw playing area over picture
 	for (int j = 0; j < 6; j++)
 	{
-		line(img, vert[j], vert[(j + 1) % 6], Scalar(0, 0, 255), 1, 8);
+		line(img, playingArea[j], playingArea[(j + 1) % 6], Scalar(0, 0, 255), 1, 8);
 	}
+	//TODO: Draw just the circles highlighting the balls on a canvas to output on projector
 	namedWindow("circles", 1);
 	imshow("circles", img);
-	//set the callback function for any mouse event
+	//set the callback function for any mouse event until mouse input for points is made
 	setMouseCallback("circles", CallBackFunc, NULL);
 	waitKey(0);
 	return 0;
