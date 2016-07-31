@@ -37,9 +37,9 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 }
 
 Mat hsvSliders(Mat img, Mat hsv, Mat hsvThresh) {
-	namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
-												//values that seem good:
-												// 114-126, 100-255, 75-255
+	namedWindow("Control", CV_WINDOW_AUTOSIZE); 
+	//create a window called "Control"
+	/*values that seem good for cropped 1: 114-126, 100-255, 75-255
 	int iLowH = 114;
 	int iHighH = 126;
 
@@ -48,7 +48,17 @@ Mat hsvSliders(Mat img, Mat hsv, Mat hsvThresh) {
 
 	int iLowV = 75;
 	int iHighV = 255;
+	*/
+	//*values that seem good for cropped 2: 114-126, 98-255, 28-255
+	int iLowH = 114;
+	int iHighH = 126;
 
+	int iLowS = 98;
+	int iHighS = 255;
+
+	int iLowV = 28;
+	int iHighV = 255;
+	//*/
 	//Create trackbars in "Control" window
 	createTrackbar("LowH", "Control", &iLowH, 179); //Hue (0 - 179)
 	createTrackbar("HighH", "Control", &iHighH, 179);
@@ -126,22 +136,31 @@ int main(int argc, char** argv)
 
 	hsvThresh = hsvSliders(img, hsv, hsvThresh);
 	GaussianBlur(hsvThresh, hsvThresh, Size(9, 9), 2, 2);
-	/*
+	/* for shrunk cropped 1  | cropped 2
 	// Table Range = x, y
-	// Top Left = 95, 32
-	// Top Right = 368, 33
-	// Mid Left = 56, 262
-	// Mid Right = 400, 263
-	// Bot Left = 0, 637
-	// Bot Right = 443, 639
+	// Top Left = 95, 32		115, 32
+	// Top Right = 368, 33		336, 19
+	// Mid Left = 56, 262		84, 173
+	// Mid Right = 400, 263		384, 158
+	// Bot Left = 0, 637		37, 438
+	// Bot Right = 443, 639		448, 416
 	*/
+	/* for shrunk cropped 1
 	int tlX = 95; int tlY = 32;
 	int trX = 368; int trY = 33;
 	int mlX = 56; int mlY = 262;
 	int mrX = 400; int mrY = 263;
 	int blX = 0; int blY = 637;
 	int brX = 443; int brY = 639;
-
+	*/
+	//* for shrunk cropped 2
+	int tlX = 115; int tlY = 32;
+	int trX = 336; int trY = 19;
+	int mlX = 84; int mlY = 173;
+	int mrX = 384; int mrY = 158;
+	int blX = 37; int blY = 438;
+	int brX = 448; int brY = 416;
+	//*/
 	vector<Point2f> vert(6);
 	vert[0] = Point(tlX, tlY);
 	vert[1] = Point(trX, trY);
@@ -161,7 +180,7 @@ int main(int argc, char** argv)
 
 	vector<Vec3f> circles;
 	//			     image, circles,         method,dp, minDist, param1, param2, min radius, max radius
-	HoughCircles(hsvThresh, circles, HOUGH_GRADIENT, 1, 20, 20, 10, 9, 15);
+	HoughCircles(hsvThresh, circles, HOUGH_GRADIENT, 1, 20, 20, 10, 7, 15);
 	for (size_t i = 0; i < circles.size(); i++)
 	{
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
