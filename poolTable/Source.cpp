@@ -171,7 +171,7 @@ int main()
 	//namedWindow("hsvThresh", 1);
 	//imshow("hsvThresh", hsvThresh);
 
-	/// Draw table outline
+	// Draw table outline
 	for (int j = 0; j < 6; j++)
 	{
 		line(img, vert[j], vert[(j + 1) % 6], Scalar(0, 0, 255), 1, 8);
