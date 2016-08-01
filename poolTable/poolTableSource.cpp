@@ -48,7 +48,7 @@ Mat hsvSliders(Mat img) {
 	cvtColor(img, hsv, COLOR_BGR2HSV);
 	namedWindow("Control", CV_WINDOW_AUTOSIZE); 
 	//create a window called "Control"
-	/*values that seem good for cropped 1: 114-126, 100-255, 75-255
+	//*//values that seem good for cropped 1: 114-126, 100-255, 75-255
 	int iLowH = 114;
 	int iHighH = 126;
 
@@ -57,8 +57,8 @@ Mat hsvSliders(Mat img) {
 
 	int iLowV = 75;
 	int iHighV = 255;
-	*/
-	//*values that seem good for cropped 2: 114-126, 98-255, 28-255
+	//*/
+	/*values that seem good for cropped 2: 114-126, 98-255, 28-255
 	int iLowH = 114;
 	int iHighH = 126;
 
@@ -135,15 +135,15 @@ int main(int argc, char** argv)
 	// Bot Left = 0, 637		37, 438
 	// Bot Right = 443, 639		448, 416
 	*/
-	/* for shrunk cropped 1
+	//* for shrunk cropped 1
 	int tlX = 95; int tlY = 32;
 	int trX = 368; int trY = 33;
 	int mlX = 56; int mlY = 262;
 	int mrX = 400; int mrY = 263;
 	int blX = 0; int blY = 637;
 	int brX = 443; int brY = 639;
-	*/
-	//* for shrunk cropped 2
+	//*/
+	/* for shrunk cropped 2
 	int tlX = 115; int tlY = 32;
 	int trX = 336; int trY = 19;
 	int mlX = 84; int mlY = 173;
