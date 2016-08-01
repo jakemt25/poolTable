@@ -3,11 +3,11 @@
 * @brief Track Pool Balls on a Table and find Trajectories
 * @author Jake Thomas
 * Todo:
-* * Implement a simple GUI for with options to play and recalibration
-* * Make it so that recalibration works with mouse clicks
+* * Implement a simple GUI (app?) for with options to play and recalibration
 * * Take pictures with pool stick to work on trajectories and finding the stick
 * * Implement with video input
-* * Output to a projector with just the circles and trajectory lines
+* * Output to a projector with just the circles and trajectory lines (circles done)
+* * Learn how to use with PI or Arduino
 */
 
 #include "opencv2/imgproc/imgproc.hpp"
@@ -21,19 +21,27 @@
 using namespace cv;
 using namespace std;
 
+vector<Point> playingArea;
+bool middleMousePressed = false;
+
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
 	if (event == EVENT_LBUTTONDOWN)
 	{
-		cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+		cout << "Entered Pocket at (" << x << ", " << y << ")" << endl;
+		playingArea.push_back(Point(x, y));
 	}
 	else if (event == EVENT_RBUTTONDOWN)
 	{
-		cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+		cout << "Deleted last click (" << x << ", " << y << ")" << endl;
+		if (!playingArea.empty()) {
+			playingArea.pop_back();
+		}
 	}
 	else if (event == EVENT_MBUTTONDOWN)
 	{
 		cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+		middleMousePressed = true;
 	}
 	/*else if (event == EVENT_MOUSEMOVE)
 	{
@@ -102,9 +110,16 @@ Mat hsvSliders(Mat img) {
 		imshow("Thresholded Image", hsvThresh); //show the thresholded image
 
 		imshow("Original", img); //show the original image
+		//set the callback function for any mouse event until mouse input for points is made
+		setMouseCallback("Original", CallBackFunc, NULL);
+
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
 			cout << "esc key is pressed by user" << endl;
+			cout << "User has clicked points:" << endl;
+			for (int i = 0; i < playingArea.size(); i++) {
+				cout << playingArea[i] << endl;
+			}
 			break;
 		}
 	}
@@ -125,7 +140,6 @@ int main(int argc, char** argv)
 	//use blur to smooth the picture
 	GaussianBlur(hsvThresh, hsvThresh, Size(9, 9), 2, 2);
 	//set up the playing area (make it so pockets don't get seen as balls)
-	//TODO: Make this based on mouse clicks at each pocket
 	/* for shrunk cropped 1  | cropped 2
 	// Table Range = x, y
 	// Top Left = 95, 32		115, 32
@@ -143,7 +157,7 @@ int main(int argc, char** argv)
 	int blX = 0; int blY = 637;
 	int brX = 443; int brY = 639;
 	*/
-	//* for shrunk cropped 2
+	/* for shrunk cropped 2
 	int tlX = 115; int tlY = 32;
 	int trX = 336; int trY = 19;
 	int mlX = 84; int mlY = 173;
@@ -151,19 +165,20 @@ int main(int argc, char** argv)
 	int blX = 37; int blY = 438;
 	int brX = 448; int brY = 416;
 	//*/
-	vector<Point2f> playingArea(6);
+	/*vector<Point2f> playingArea(6);
 	playingArea[0] = Point(tlX, tlY);
 	playingArea[1] = Point(trX, trY);
 	playingArea[2] = Point(mrX, mrY);
 	playingArea[3] = Point(brX, brY);
 	playingArea[4] = Point(blX, blY);
 	playingArea[5] = Point(mlX, mlY);
+	*/
 	//to determine if it's on the playing area, have to find the contours
 	//to do this we must draw it on its own area and overlay it on the picture
 	Mat contourMapping = Mat::zeros(img.size(), CV_8UC1);
 	for (int j = 0; j < 6; j++)
 	{
-		line(contourMapping, playingArea[j], playingArea[(j + 1) % 6], Scalar(255), 3, 8);
+		line(contourMapping, playingArea[j], playingArea[(j + 1) % playingArea.size()], Scalar(255), 3, 8);
 	}
 	/// Get the contours
 	vector<vector<Point> > contours; vector<Vec4i> hierarchy;
@@ -171,6 +186,7 @@ int main(int argc, char** argv)
 
 	//finally use hough circles function to find the balls that have a center on the playing area
 	vector<Vec3f> circles;
+	Mat projectorImage = Mat::zeros(img.size(), CV_8UC1);
 	HoughCircles(hsvThresh, circles, HOUGH_GRADIENT, 1, 20, 20, 10, 7, 15);
 	for (size_t i = 0; i < circles.size(); i++)
 	{
@@ -180,8 +196,10 @@ int main(int argc, char** argv)
 			int radius = cvRound(circles[i][2]);
 			// draw the circle center
 			circle(img, center, 3, Scalar(0, 255, 0), -1, 8, 0);
+			circle(projectorImage, center, 3, Scalar(255, 255, 255), -1, 8, 0);
 			// draw the circle outline
 			circle(img, center, radius, Scalar(0, 0, 255), 3, 8, 0);
+			circle(projectorImage, center, radius, Scalar(255, 255, 255), 3, 8, 0);
 		}
 	}
 	// Draw playing area over picture
@@ -190,10 +208,10 @@ int main(int argc, char** argv)
 		line(img, playingArea[j], playingArea[(j + 1) % 6], Scalar(0, 0, 255), 1, 8);
 	}
 	//TODO: Draw just the circles highlighting the balls on a canvas to output on projector
+	namedWindow("Projected Image", 1);
+	imshow("Projected Image", projectorImage);
 	namedWindow("circles", 1);
 	imshow("circles", img);
-	//set the callback function for any mouse event until mouse input for points is made
-	setMouseCallback("circles", CallBackFunc, NULL);
 	waitKey(0);
 	return 0;
 }
