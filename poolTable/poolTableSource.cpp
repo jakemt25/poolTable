@@ -1,5 +1,5 @@
 /**
-* @file Source.cpp
+* @file poolTableSource.cpp
 * @brief Track Pool Balls on a Table and find Trajectories
 * @author Jake Thomas
 * Todo:
